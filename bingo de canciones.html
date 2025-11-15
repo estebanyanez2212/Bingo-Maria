@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Cartones de Bingo Musical - Final</title>
+    <style>
+        /* Paleta de Colores (Modo Oscuro) */
+        :root {
+            --bg-dark: #1e1e1e;
+            --text-light: #f0f0f0;
+            --accent-neon-blue: #00ffff; /* Cielito */
+            --accent-neon-magenta: #ff00ff; /* Fucsia */
+            --card-bg: #2d2d2d;
+            --cell-bg: #3c3c3c;
+            --cell-border: #505050;
+        }
+
+        /* ESTILOS DE LA APLICACIÓN WEB */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            margin: 0;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: var(--accent-neon-blue);
+            text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+            margin-bottom: 5px;
+        }
+
+        h2 {
+            color: var(--accent-neon-magenta);
+            margin-top: 5px;
+            margin-bottom: 40px;
+        }
+
+        /* Controles de Botones y Entrada */
+        .controls {
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            /* Ocultar botones al imprimir */
+            @media print {
+                display: none;
+            }
+        }
+
+        button {
+            background-color: var(--accent-neon-magenta);
+            color: var(--bg-dark);
+            border: 2px solid var(--accent-neon-magenta);
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.1s;
+        }
+
+        button:hover {
+            background-color: transparent;
+            color: var(--accent-neon-magenta);
+            border-color: var(--accent-neon-magenta);
+        }
+        
+        input[type="number"] {
+            background-color: var(--card-bg);
+            color: var(--text-light);
+            border: 1px solid var(--cell-border);
+            padding: 8px;
+            border-radius: 5px;
+            width: 60px;
+            text-align: center;
+        }
+        
+        label {
+            font-size: 14px;
+        }
+
+
+        /* Contenedor de Cartones */
+        .bingo-cards-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+            justify-content: center;
+            max-width: 1400px; 
+            margin-bottom: 50px;
+        }
+
+        /* Estilo del Cartón de Bingo */
+        .bingo-card {
+            width: 320px; 
+            border: 3px solid var(--accent-neon-blue);
+            background-color: var(--card-bg);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .card-title {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--accent-neon-magenta);
+            margin-bottom: 10px;
+            border-bottom: 2px solid var(--cell-border);
+            padding-bottom: 5px;
+        }
+
+        /* Estilo de la Cuadrícula (3x4) */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            height: 240px; 
+        }
+
+        .cell {
+            background-color: var(--cell-bg);
+            border: 1px solid var(--cell-border);
+            padding: 5px; 
+            text-align: center;
+            font-size: 11px; 
+            min-height: 60px;
+            max-height: 60px;
+            overflow: hidden; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.1; 
+            box-sizing: border-box;
+            cursor: pointer;
+            color: var(--text-light);
+            /* Importante para que el texto fluya y se centre bien */
+            text-align: center;
+            vertical-align: middle; 
+        }
+        
+        /* Estilo para celda marcada (para el juego) */
+        .cell.marked {
+            background-color: var(--accent-neon-blue); 
+            color: var(--bg-dark);
+            font-style: italic;
+            text-decoration: line-through;
+            opacity: 0.8;
+        }
+
+        /* ESTILO DE LA LISTA MAESTRA */
+        #masterListContainer {
+            width: 100%;
+            max-width: 800px;
+            margin-top: 50px;
+            padding: 20px;
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            border: 1px dashed var(--accent-neon-magenta);
+        }
+
+        #masterListContainer h3 {
+            color: var(--accent-neon-magenta);
+            text-align: center;
+            border-bottom: 1px solid var(--cell-border);
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        
+        .master-list {
+            columns: 2; /* Dos columnas para que quede mejor en pantalla y en impresión */
+            list-style-type: none;
+            padding: 0;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+        
+        /* ESTILOS DE IMPRESIÓN (Optimizados para 4 cartones por hoja y la Lista Maestra) */
+        @media print {
+            @page {
+                size: A4;
+                margin: 0.5cm;
+            }
+
+            body {
+                background-color: white;
+                color: black;
+                padding: 0;
+                margin: 0;
+                display: block; 
+            }
+            
+            /* Cartones 2x2 por página */
+            .bingo-cards-container {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr); 
+                gap: 15px; 
+                width: 100%; 
+                justify-content: space-between;
+                margin-bottom: 10px;
+            }
+
+            .bingo-card {
+                width: 100%; 
+                border: 2px solid black; 
+                box-shadow: none;
+                border-radius: 0;
+                break-inside: avoid; 
+                page-break-inside: avoid;
+            }
+            
+            .card-title {
+                color: black;
+                border-bottom-color: #ccc;
+            }
+            
+            .cell {
+                background-color: #f0f0f0 !important;
+                color: black !important;
+                border-color: #ccc !important;
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact;
+                min-height: 55px; 
+                max-height: 55px;
+            }
+
+            /* Asegurar que la Lista Maestra quede en una página separada si es muy larga */
+            #masterListContainer {
+                margin-top: 20px;
+                background-color: white;
+                border: 1px solid black;
+                padding: 15px;
+                color: black;
+                /* Agregamos un salto de página si es necesario */
+                page-break-before: always; 
+            }
+            
+            #masterListContainer h3 {
+                color: black;
+                border-bottom-color: black;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🎉 Bingo Musical de María 🎉</h1>
+    <h2>Generador de Cartones 3x4</h2>
+
+    <div class="controls">
+        <button onclick="generateCards(5)">Generar 5 Cartones Aleatorios</button>
+        <button onclick="window.print()">Imprimir Cartones y Lista Maestra</button>
+        <label for="numCards">Cantidad:</label>
+        <input type="number" id="numCards" value="4" min="1" max="50" style="width: 60px;">
+        <button onclick="generateCustomCards()">Generar Cantidad Personalizada</button>
+    </div>
+
+    <div class="bingo-cards-container" id="bingoCardsContainer">
+        </div>
+
+    <div id="masterListContainer">
+        <h3>🎤 Lista Maestra de Canciones para la Llamada (85 Canciones)</h3>
+        <ul class="master-list" id="masterList">
+            </ul>
+    </div>
+
+    <script>
+        // LISTA DE CANCIONES (¡Copiada de tu lista final!)
+        const SONGS = [
+            "911 - Rawayana",
+            "Algo me gusta de ti - Wisin & Yandel",
+            "All The Stars (with SZA) - Kendrick Lamar, SZA",
+            "Amapolas - Leo Rizzi",
+            "Amapolas - Remix - Leo Rizzi, Danny Ocean",
+            "Azul - Cristian Castro",
+            "Bad Bunny - DtmF",
+            "Beat It - Michael Jackson",
+            "Beauty and a Beat - Justin Bieber ft. Nicki Minaj",
+            "Bebe Bonita - Chino & Nacho ft. Jay Sean",
+            "Black Eyed Peas - I Gotta Feeling",
+            "Bohemian Rhapsody - Queen",
+            "CAFÉ CON RON - Bad Bunny, Los Pleneros de la Cresta",
+            "Callaíta - Bad Bunny, Tainy",
+            "Camisa Negra - Juanes",
+            "CAN'T STOP THE FEELING! - Justin Timberlake",
+            "Capaz (merengueton) - Allehy y Yorghaky",
+            "CASUALIDAD - Mora",
+            "Chulo pt.2 - Bad Gyal, Tokischa, Young Miko",
+            "COSAS QUE NO TE DIJE - SAIKO",
+            "Crayola - Danny Ocean",
+            "Cuando me acerco a ti - Danny Ocean",
+            "Cuando me enamoro - Enrique Iglesias",
+            "Cuando me enamoro - Juan Luis Guerra",
+            "Cuaderno - Dalex, Nicky Jam, Justin Quiles, Sec...",
+            "Dame un break - Rawayana",
+            "De Música Ligera - Soda Stereo",
+            "Dembow - Danny Ocean",
+            "Dimelo - Enrique Iglesias",
+            "DJ Got Us Fallin' In Love - USHER, Pitbull",
+            "Dutty Love - Don Omar, NATTI NATASHA",
+            "El Tiburon - Proyecto Uno",
+            "Give Me Everything - Pitbull ft. Ne-Yo, Afrojack, Nayer",
+            "Háblame Bajito - Abraham Mateo, 50 Cent, Austin Maho...",
+            "He Llorado (Como Un Niño) - Juan Magán, Gente De Zona",
+            "Hookah & Sheridan's - Tommy Boysen",
+            "Imaginándote - Reykon ft. Daddy Yankee",
+            "La Casa - Caramelos De Cianuro",
+            "La Incondicional - Luis Miguel",
+            "La Inocente - Mora, Feid",
+            "La Jeepeta - Remix - Nio Garcia, Anuel AA, Myke Towers, ...",
+            "La Nave del Olvido - José José",
+            "Leave Out All The Rest - Linkin Park",
+            "Llamado de Emergencia - Daddy Yankee",
+            "Lloviendo Estrellas - Cristian Castro",
+            "Loco Enamorado - Abraham Mateo",
+            "Lost On You - LP",
+            "Lovumba - Daddy Yankee",
+            "LUCES DE COLORES - Omar Courtz",
+            "Mamichula - con Nicki Nicole - Trueno, Nicki Nicole, Bizarrap, Taiu, tato...",
+            "Me Rehúso - Danny Ocean",
+            "Memorias - Mora",
+            "Mesa que mas aplauda - Grupo Climax",
+            "Mientes - Camila",
+            "More - Zion, Jory Boy, Ken-Y",
+            "Moscow Mule - Bad Bunny",
+            "Ojos Lindos - Bad Bunny ft Bomba Estéreo",
+            "On My Own - Brady",
+            "Orion - ELENA ROSE, Boza",
+            "Oye mi amor - Maná",
+            "PARANORMAL - Tainy, Alvaro Diaz",
+            "Patadas de Ahogado - LATIN MAFIA, Humbe",
+            "Pepas - Farruko",
+            "PERFUMITO NUEVO - Bad Bunny, RaiNao",
+            "QUEVASHACERHOY? - Omar Courtz, Dela Rose",
+            "Reggaeton Lento - CNCO",
+            "Riptide - Vance Joy",
+            "Sexy Movimiento - Wisin & Yandel",
+            "Shake It Off - Taylor Swift",
+            "Sin ti - Chino & Nacho",
+            "Stop - Canserbero, Apache",
+            "Tabaco y Chanel - Bacilos",
+            "Take a chance on me - ABBA",
+            "Tanto la queria - Andy & Lucas",
+            "The Nights - Avicii",
+            "Toda (Remix) - Alex Rose, Rauw Alejandro, Lenny Tavá...",
+            "Todavía - La Factoría",
+            "Tu Tienes un No Se Que - Kent Y Tony",
+            "Una fotografía - Bonny Cepeda",
+            "VAGABUNDO - Sebastián Yatra, Beelé, Manuel Turizo",
+            "Vaina Loca - Ozuna, Manuel Turizo",
+            "Ven Conmigo - Daddy Yankee, Prince Royce",
+            "VENEKA - Rawayana",
+            "Verano En París - Jerry Di",
+            "x100 - Corina Smith"
+        ];
+        
+        const NUM_CELLS = 12; // Formato 3x4
+        let cardCount = 0;
+
+        /**
+         * Función para obtener una muestra aleatoria y sin repetición de la lista de canciones.
+         */
+        function getUniqueRandomSongs(size) {
+            let shuffled = [...SONGS];
+            if (shuffled.length < size) {
+                return shuffled;
+            }
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled.slice(0, size);
+        }
+
+        /**
+         * Función para crear el elemento DOM de un solo cartón de bingo.
+         */
+        function createBingoCard(songList) {
+            cardCount++;
+            const card = document.createElement('div');
+            card.className = 'bingo-card';
+
+            const cardTitle = document.createElement('div');
+            cardTitle.className = 'card-title';
+            cardTitle.textContent = `Cartón #${cardCount}`;
+            card.appendChild(cardTitle);
+
+            const grid = document.createElement('div');
+            grid.className = 'grid';
+
+            songList.forEach(song => {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.textContent = song;
+                
+                cell.onclick = function() {
+                    this.classList.toggle('marked');
+                };
+                
+                grid.appendChild(cell);
+            });
+
+            card.appendChild(grid);
+            return card;
+        }
+
+        /**
+         * Función principal para generar y mostrar los cartones.
+         */
+        function generateCards(numCards) {
+            const container = document.getElementById('bingoCardsContainer');
+            container.innerHTML = ''; // Limpiar cartones anteriores
+            cardCount = 0; // Resetear el contador de cartones
+            
+            if (SONGS.length < NUM_CELLS) {
+                 alert("Advertencia: ¡No hay suficientes canciones para llenar un cartón! Se necesitan al menos " + NUM_CELLS + " canciones.");
+                 return;
+            }
+
+            for (let i = 0; i < numCards; i++) {
+                const randomSongs = getUniqueRandomSongs(NUM_CELLS);
+                const newCard = createBingoCard(randomSongs);
+                container.appendChild(newCard);
+            }
+        }
+        
+        /**
+         * Función para generar la cantidad de cartones introducida por el usuario.
+         */
+        function generateCustomCards() {
+            const numInput = document.getElementById('numCards');
+            const num = parseInt(numInput.value);
+            
+            if (isNaN(num) || num < 1 || num > 50) {
+                alert("Por favor, introduce un número válido entre 1 y 50.");
+                return;
+            }
+            generateCards(num);
+        }
+
+        /**
+         * Función para generar la lista maestra de canciones.
+         */
+        function generateMasterList() {
+            const list = document.getElementById('masterList');
+            list.innerHTML = ''; // Limpiar la lista anterior
+
+            const sortedSongs = [...SONGS].sort(); // Ordenar alfabéticamente para facilitar la búsqueda
+            
+            sortedSongs.forEach((song, index) => {
+                const listItem = document.createElement('li');
+                // Se agrega el número de lista para fácil referencia
+                listItem.textContent = `${index + 1}. ${song}`; 
+                list.appendChild(listItem);
+            });
+        }
+        
+        // Generar la lista maestra y 4 cartones por defecto al cargar la página
+        window.onload = () => {
+             generateMasterList();
+             generateCards(4);
+        };
+    </script>
+</body>
+</html>
