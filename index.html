@@ -139,7 +139,6 @@
             box-sizing: border-box;
             cursor: pointer;
             color: var(--text-light);
-            /* Importante para que el texto fluya y se centre bien */
             text-align: center;
             vertical-align: middle; 
         }
@@ -170,6 +169,12 @@
             border-bottom: 1px solid var(--cell-border);
             padding-bottom: 10px;
             margin-top: 0;
+        }
+        
+        #masterListContainer p.note {
+            text-align: center;
+            color: var(--accent-neon-blue);
+            font-style: italic;
         }
         
         .master-list {
@@ -236,13 +241,11 @@
                 border: 1px solid black;
                 padding: 15px;
                 color: black;
-                /* Agregamos un salto de página si es necesario */
                 page-break-before: always; 
             }
             
-            #masterListContainer h3 {
+            #masterListContainer h3, #masterListContainer p.note {
                 color: black;
-                border-bottom-color: black;
             }
         }
     </style>
@@ -264,14 +267,15 @@
         </div>
 
     <div id="masterListContainer">
-        <h3>🎤 Lista Maestra de Canciones para la Llamada (85 Canciones)</h3>
+        <h3>🎤 Lista de Canciones en JUEGO (Sub-Lista Maestra)</h3>
+        <p class="note">Estas 30 canciones son las únicas que aparecen en los cartones y deben ser usadas para la llamada.</p>
         <ul class="master-list" id="masterList">
             </ul>
     </div>
 
     <script>
-        // LISTA DE CANCIONES (¡Copiada de tu lista final!)
-        const SONGS = [
+        // LISTA MAESTRA DE 85 CANCIONES
+        const ALL_SONGS = [
             "911 - Rawayana",
             "Algo me gusta de ti - Wisin & Yandel",
             "All The Stars (with SZA) - Kendrick Lamar, SZA",
@@ -359,16 +363,39 @@
             "x100 - Corina Smith"
         ];
         
-        const NUM_CELLS = 12; // Formato 3x4
+        const NUM_CELLS = 12; // 3x4
+        const SIMILARITY_POOL_SIZE = 30; // Nuevo: Se genera un pool de 30 canciones para alta similitud.
         let cardCount = 0;
+        let similarityPool = []; // Pool de canciones activas en el juego.
 
         /**
-         * Función para obtener una muestra aleatoria y sin repetición de la lista de canciones.
+         * Función para generar una sub-lista maestra de 30 canciones del total.
+         */
+        function generateSimilarityPool() {
+            if (ALL_SONGS.length < SIMILARITY_POOL_SIZE) {
+                // En caso de que la lista original fuera menor a 30, usar la lista completa.
+                similarityPool = [...ALL_SONGS]; 
+                return;
+            }
+            
+            // Barajar la lista completa de canciones y tomar las primeras 30
+            let shuffled = [...ALL_SONGS];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            similarityPool = shuffled.slice(0, SIMILARITY_POOL_SIZE);
+        }
+        
+        /**
+         * Función para obtener una muestra aleatoria y sin repetición del pool actual.
          */
         function getUniqueRandomSongs(size) {
-            let shuffled = [...SONGS];
+            // USAMOS EL similarityPool AHORA, NO ALL_SONGS
+            let shuffled = [...similarityPool];
             if (shuffled.length < size) {
-                return shuffled;
+                console.error("El pool de similitud es demasiado pequeño para generar un cartón.");
+                return shuffled; 
             }
             for (let i = shuffled.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -378,13 +405,13 @@
         }
 
         /**
-         * Función para crear el elemento DOM de un solo cartón de bingo.
+         * Función para crear el elemento DOM de un solo cartón de bingo. (Sin cambios)
          */
         function createBingoCard(songList) {
             cardCount++;
             const card = document.createElement('div');
             card.className = 'bingo-card';
-
+            // ... (rest of the createBingoCard function remains the same)
             const cardTitle = document.createElement('div');
             cardTitle.className = 'card-title';
             cardTitle.textContent = `Cartón #${cardCount}`;
@@ -414,14 +441,21 @@
          */
         function generateCards(numCards) {
             const container = document.getElementById('bingoCardsContainer');
-            container.innerHTML = ''; // Limpiar cartones anteriores
-            cardCount = 0; // Resetear el contador de cartones
-            
-            if (SONGS.length < NUM_CELLS) {
-                 alert("Advertencia: ¡No hay suficientes canciones para llenar un cartón! Se necesitan al menos " + NUM_CELLS + " canciones.");
+            container.innerHTML = ''; 
+            cardCount = 0; 
+
+            if (ALL_SONGS.length < SIMILARITY_POOL_SIZE) {
+                 alert("Advertencia: ¡La lista de canciones es muy corta!");
                  return;
             }
+            
+            // 1. GENERAR EL NUEVO POOL DE SIMILITUD CADA VEZ QUE SE GENERAN NUEVOS CARTONES
+            generateSimilarityPool();
+            
+            // 2. Actualizar la lista maestra visible con el nuevo pool
+            generateMasterList(similarityPool);
 
+            // 3. Generar los cartones usando el pool
             for (let i = 0; i < numCards; i++) {
                 const randomSongs = getUniqueRandomSongs(NUM_CELLS);
                 const newCard = createBingoCard(randomSongs);
@@ -445,27 +479,25 @@
 
         /**
          * Función para generar la lista maestra de canciones.
+         * @param {Array} listToDisplay - La lista de canciones del pool actual.
          */
-        function generateMasterList() {
+        function generateMasterList(listToDisplay) {
             const list = document.getElementById('masterList');
-            list.innerHTML = ''; // Limpiar la lista anterior
+            list.innerHTML = ''; 
 
-            const sortedSongs = [...SONGS].sort(); // Ordenar alfabéticamente para facilitar la búsqueda
+            const sortedSongs = [...listToDisplay].sort(); 
             
             sortedSongs.forEach((song, index) => {
                 const listItem = document.createElement('li');
-                // Se agrega el número de lista para fácil referencia
                 listItem.textContent = `${index + 1}. ${song}`; 
                 list.appendChild(listItem);
             });
         }
         
-        // Generar la lista maestra y 4 cartones por defecto al cargar la página
+        // Generar 4 cartones por defecto al cargar la página
         window.onload = () => {
-             generateMasterList();
              generateCards(4);
         };
     </script>
 </body>
-
 </html>
